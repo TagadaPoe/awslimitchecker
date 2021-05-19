@@ -43,68 +43,36 @@ from awslimitchecker.services.cloudfront import _CloudfrontService
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
-if (
-        sys.version_info[0] < 3 or
-        sys.version_info[0] == 3 and sys.version_info[1] < 4
-):
-    from mock import patch, call, Mock
+if sys.version_info[0] < 3 or sys.version_info[0] == 3 \
+        and sys.version_info[1] < 4:
+    from mock import patch, call, Mock, DEFAULT
 else:
-    from unittest.mock import patch, call, Mock
+    from unittest.mock import patch, call, Mock, DEFAULT
 
-
-pbm = 'awslimitchecker.services.cloudfront'  # module patch base
-pb = '%s._CloudfrontService' % pbm  # class patch pase
+pbm = "awslimitchecker.services.cloudfront"  # module patch base
+pb = "%s._CloudfrontService" % pbm  # class patch pase
 
 
 class Test_CloudfrontService(object):
-
     def test_init(self):
         """test __init__()"""
-        cls = _CloudfrontService(21, 43)
-        assert cls.service_name == 'CloudFront'
-        assert cls.api_name == 'cloudfront'
-        assert cls.quotas_service_code == 'cloudfront'
+        cls = _CloudfrontService(21, 43, {}, None)
+        assert cls.service_name == "CloudFront"
+        assert cls.api_name == "cloudfront"
+        assert cls.quotas_service_code == "cloudfront"
         assert cls.conn is None
         assert cls.warning_threshold == 21
         assert cls.critical_threshold == 43
 
     def test_get_limits(self):
-        cls = _CloudfrontService(21, 43)
+        cls = _CloudfrontService(21, 43, {}, None)
         cls.limits = {}
         res = cls.get_limits()
-        assert sorted(res.keys()) == sorted([
-            'SomeLimitNameHere',
-            'Alternate domain names (CNAMEs) per distributionGlobal',
-            'Cache behaviors per distributionGlobal',
-            'Concurrent executionsGlobal',
-            'Cookies per cache policyGlobal',
-            'Cookies per origin request policyGlobal',
-            'Custom headers: maximum number of custom headers that you can configure CloudFront to add to origin requestsGlobal',
-            'Data transfer rate per distributionGlobal',
-            'Distributions associated with a single key groupGlobal',
-            'Distributions per AWS account that you can create triggers forGlobal',
-            'Headers per cache policyGlobal',
-            'Headers per origin request policyGlobal',
-            'Key groups associated with a single distributionGlobal',
-            'Key groups per AWS accountGlobal',
-            'Origin access identities per accountGlobal',
-            'Origin groups per distributionGlobal',
-            'Origins per distributionGlobal',
-            'Public keys in a single key groupGlobal',
-            'Query strings per cache policyGlobal',
-            'Query strings per origin request policyGlobal',
-            'RTMP distributions per AWS accountGlobal',
-            'Request timeoutGlobal',
-            'Requests per secondGlobal',
-            'Requests per second per distributionGlobal',
-            'Response timeout per originGlobal',
-            'SSL certificates per AWS account when serving HTTPS requests using dedicated IP addressesGlobal',
-            'Triggers per distributionGlobal',
-            'Web distributions per AWS accountGlobal',
-            'Whitelisted cookies per cache behaviorGlobal',
-            'Whitelisted headers per cache behaviorGlobal',
-            'Whitelisted query strings per cache behaviorGlobal',
-        ])
+        assert sorted(res.keys()) == sorted(
+            [
+                "Distributions per AWS account",
+            ]
+        )
         for name, limit in res.items():
             assert limit.service == cls
             assert limit.def_warning_threshold == 21
@@ -113,28 +81,72 @@ class Test_CloudfrontService(object):
     def test_get_limits_again(self):
         """test that existing limits dict is returned on subsequent calls"""
         mock_limits = Mock()
-        cls = _CloudfrontService(21, 43)
+        cls = _CloudfrontService(21, 43, {}, None)
         cls.limits = mock_limits
         res = cls.get_limits()
         assert res == mock_limits
 
     def test_find_usage(self):
-        # put boto3 responses in response_fixtures.py, then do something like:
-        # response = result_fixtures.EBS.test_find_usage_ebs
-        mock_conn = Mock()
-        mock_conn.some_method.return_value =  # some logical return value
-        with patch('%s.connect' % pb) as mock_connect:
-            cls = _CloudfrontService(21, 43)
-            cls.conn = mock_conn
+        """
+        Check that find_usage() method calls other methods.
+        """
+        with patch.multiple(
+            pb,
+            connect=DEFAULT,
+            _find_usage_distributions=DEFAULT,
+            autospec=True
+        ) as mocks:
+            cls = _CloudfrontService(21, 43, {}, None)
             assert cls._have_usage is False
             cls.find_usage()
-        assert mock_connect.mock_calls == [call()]
+
         assert cls._have_usage is True
-        assert mock_conn.mock_calls == [call.some_method()]
-        # TODO - assert about usage
+        assert len(mocks) == 2
+        # other methods should have been called
+        for x in [
+            "_find_usage_distributions",
+        ]:
+            assert mocks[x].mock_calls == [call(cls)]
+
+    def test_find_usage_distributions(self):
+        """
+        Check that obtaining distributions usage is correct, by mocking AWS
+        response.
+        """
+        response = result_fixtures.CloudFront.test_find_usage_distributions
+
+        mock_conn = Mock()
+
+        # with patch("%s.connect" % pb) as mock_connect:
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = response
+            cls._find_usage_distributions()
+
+        # Check that usage values are correctly set
+        assert len(
+            cls.limits["Distributions per AWS account"].get_current_usage()
+        ) == 1
+        assert (
+            cls.limits["Distributions per AWS account"].get_current_usage()[0]
+            .get_value() == 1
+        )
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        # assert mock_connect.mock_calls == [call()]
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.get_distributions,
+                alc_marker_path=["DistributionList", "NextMarker"],
+                alc_data_path=["DistributionList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
 
     def test_required_iam_permissions(self):
-        cls = _CloudfrontService(21, 43)
+        cls = _CloudfrontService(21, 43, {}, None)
         assert cls.required_iam_permissions() == [
-            # TODO - permissions here
+            "cloudfront:ListDistributions"
         ]

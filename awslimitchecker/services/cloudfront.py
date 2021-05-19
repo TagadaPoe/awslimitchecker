@@ -42,6 +42,7 @@ import logging
 
 from .base import _AwsService
 from ..limit import AwsLimit
+from ..utils import paginate_dict
 
 logger = logging.getLogger(__name__)
 
@@ -62,22 +63,33 @@ class _CloudfrontService(_AwsService):
         self.connect()
         for lim in self.limits.values():
             lim._reset_usage()
-        # TODO: update your usage here, i.e.:
-        """
-        usage = self.conn.method_to_get_usage()
-        # or, if it needs to be paginated,  something like:
-        # remebering to 'from ..utils import paginate_dict'
-        usage = paginate_dict(
-            self.conn.method_to_get_usage,
-            alc_marker_path=['NextToken'],
-            alc_data_path=['ResourceListName'],
-            alc_marker_param='NextToken'
-        )
-        u_id = (resource id from AWS)
-        self.limits['Number of u']._add_current_usage(u, aws_type='U', id=u_id)
-        """
+
+        self._find_usage_distributions()
+
         self._have_usage = True
         logger.debug("Done checking usage.")
+
+    def _find_usage_distributions(self):
+        """find usage for CloudFront distribution"""
+
+        # Read usage from AWS
+        # Without paginate:
+        # distributions = self.conn.get_distributions()
+        # nb_distributions = distributions['DistributionList']['Quantity']
+        # With paginate:
+        nb_distributions = len(
+            paginate_dict(
+                self.conn.get_distributions,
+                alc_marker_path=['DistributionList', 'NextMarker'],
+                alc_data_path=['DistributionList', 'Items'],
+                alc_marker_param='Marker'
+            )['DistributionList']['Items']
+        )
+        # Update quota usage
+        self.limits['Distributions per AWS account']._add_current_usage(
+            nb_distributions,
+            aws_type='AWS::CloudFront::Distribution',
+        )
 
     def get_limits(self):
         """
@@ -90,8 +102,8 @@ class _CloudfrontService(_AwsService):
         if self.limits != {}:
             return self.limits
         limits = {}
-        # L-24B04930	Web distributions per AWS account   200
-        limits["Web distributions per AWS account"] = AwsLimit(
+
+        limits["Distributions per AWS account"] = AwsLimit(
             "Distributions per AWS account",
             self,
             200,
@@ -100,65 +112,9 @@ class _CloudfrontService(_AwsService):
             limit_type="AWS::CloudFront::Distribution",
             quotas_name="Web distributions per AWS account",
         )
-        # L-F432D044	Cache behaviors per distribution    25
-        limits["Cache behaviors per distribution"] = AwsLimit(
-            "Cache behaviors per distribution",
-            self,
-            25,
-            self.warning_threshold,
-            self.critical_threshold,
-            limit_type=None,
-        )
-        # L-9EBD26CA	Public keys in a single key group   5
-        limits["Public keys in a single key group"] = AwsLimit(
-            "Public keys in a single key group",
-            self,
-            5,
-            self.warning_threshold,
-            self.critical_threshold,
-            limit_type="AWS::CloudFront::PublicKey",
-        )
-        # L-E7E9ACEB	Key groups associated with a single distribution   4
-        limits["Key groups associated with a single distribution"] = AwsLimit(
-            "Key groups associated with a single distribution",
-            self,
-            4,
-            self.warning_threshold,
-            self.critical_threshold,
-            limit_type="AWS::CloudFront::KeyGroup",
-        )
-        # L-D64DA6E2    Key groups per AWS account    10
-        limits["Key groups per AWS account"] = AwsLimit(
-            "Key groups per AWS account",
-            self,
-            10,
-            self.warning_threshold,
-            self.critical_threshold,
-            limit_type="AWS::CloudFront::KeyGroup",
-        )
-        # L-C19110C4	Distributions associated with a single key group    100
-        limits["Distributions associated with a single key group"] = AwsLimit(
-            "Distributions associated with a single key group",
-            self,
-            100,
-            self.warning_threshold,
-            self.critical_threshold,
-            limit_type="AWS::CloudFront::KeyGroup",
-        )
 
         self.limits = limits
         return limits
-
-    def _update_limits_from_api(self):
-        """
-        Call the service's API action to retrieve limit/quota information, and
-        update AwsLimit objects in ``self.limits`` with this information.
-        """
-        # TODO: if the service has an API that can retrieve current limit information
-        # i.e. ``DescribeAccountAttributes``, call that action here and update each
-        # relevant AwsLimit object (in ``self.limits``) via its ``._set_api_limit()`` method.
-        # ELSE if the service has no API call for this, remove this method.
-        raise NotImplementedException()
 
     def required_iam_permissions(self):
         """
@@ -169,7 +125,6 @@ class _CloudfrontService(_AwsService):
         :returns: list of IAM Action strings
         :rtype: list
         """
-        # TODO: update this to be all IAM permissions required for find_usage() to work
         return [
-            "Cloudfront:SomeAction",
+            "cloudfront:ListDistributions",
         ]
