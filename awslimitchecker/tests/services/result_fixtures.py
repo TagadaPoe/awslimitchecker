@@ -1304,24 +1304,43 @@ class ElasticBeanstalk(object):
 
 
 class CloudFront(object):
+    test_find_usage_distributions_empty = {
+        'DistributionList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 0
+        }
+    }
     test_find_usage_distributions = {
         'DistributionList': {
             'Marker': 'string',
             'NextMarker': 'string',
             'MaxItems': 123,
             'IsTruncated': False,
-            'Quantity': 123,
+            'Quantity': 2,
             'Items': [
                 {
-                    'Id': 'string',
+                    'Id': 'ID-DISTRIBUTION-000',
+                    'Aliases': {
+                        'Quantity': 3,
+                        'Items': [
+                            'string1', 'string2', 'string3'
+                        ]
+                    },
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-001',
                     'ARN': 'string',
                     'Status': 'string',
                     'LastModifiedTime': datetime(2015, 1, 1),
                     'DomainName': 'string',
                     'Aliases': {
-                        'Quantity': 123,
+                        'Quantity': 2,
                         'Items': [
-                            'string',
+                            'string1',
+                            'string2',
                         ]
                     },
                     'Origins': {

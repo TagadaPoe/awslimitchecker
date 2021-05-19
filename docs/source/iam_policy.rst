@@ -39,6 +39,7 @@ services that do not affect the results of this program.
             "autoscaling:DescribeLaunchConfigurations",
             "cloudformation:DescribeAccountLimits",
             "cloudformation:DescribeStacks",
+            "cloudfront:ListDistributions",
             "cloudtrail:DescribeTrails",
             "cloudtrail:GetEventSelectors",
             "cloudwatch:GetMetricData",

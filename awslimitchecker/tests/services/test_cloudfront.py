@@ -70,6 +70,7 @@ class Test_CloudfrontService(object):
         res = cls.get_limits()
         assert sorted(res.keys()) == sorted(
             [
+                "Alternate domain names (CNAMEs) per distribution",
                 "Distributions per AWS account",
             ]
         )
@@ -130,20 +131,64 @@ class Test_CloudfrontService(object):
         ) == 1
         assert (
             cls.limits["Distributions per AWS account"].get_current_usage()[0]
-            .get_value() == 1
+            .get_value() == 2
         )
+        assert (
+            cls.limits["Distributions per AWS account"].get_current_usage()[0]
+            .resource_id is None
+        )
+
+        assert len(cls.limits[
+            "Alternate domain names (CNAMEs) per distribution"
+        ].get_current_usage()) == 2
+        assert cls.limits[
+            "Alternate domain names (CNAMEs) per distribution"
+        ].get_current_usage()[0].get_value() == 3
+        assert cls.limits[
+            "Alternate domain names (CNAMEs) per distribution"
+        ].get_current_usage()[0].resource_id == "ID-DISTRIBUTION-000"
 
         # Check which methods were called
         assert mock_conn.mock_calls == []
         # assert mock_connect.mock_calls == [call()]
         assert mock_paginate.mock_calls == [
             call(
-                mock_conn.get_distributions,
+                mock_conn.list_distributions,
                 alc_marker_path=["DistributionList", "NextMarker"],
                 alc_data_path=["DistributionList", "Items"],
                 alc_marker_param="Marker",
             )
         ]
+        
+    def test_find_usage_distributions_empty(self):
+        """
+        Check that obtaining distributions usage is correct, by mocking AWS
+        response.
+        Case when there are no distributions.
+        """
+        resp = result_fixtures.CloudFront.test_find_usage_distributions_empty
+
+        mock_conn = Mock()
+
+        # with patch("%s.connect" % pb) as mock_connect:
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = resp
+            cls._find_usage_distributions()
+
+        # Check that usage values are correctly set
+        assert len(
+            cls.limits["Distributions per AWS account"].get_current_usage()
+        ) == 1
+        assert (
+            cls.limits["Distributions per AWS account"].get_current_usage()[0]
+            .get_value() == 0
+        )
+        assert (
+            cls.limits["Distributions per AWS account"].get_current_usage()[0]
+            .resource_id is None
+        )
 
     def test_required_iam_permissions(self):
         cls = _CloudfrontService(21, 43, {}, None)

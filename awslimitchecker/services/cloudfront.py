@@ -73,19 +73,29 @@ class _CloudfrontService(_AwsService):
         """find usage for CloudFront distribution"""
 
         # Read usage from AWS
-        # Without paginate:
-        # distributions = self.conn.get_distributions()
-        # nb_distributions = distributions['DistributionList']['Quantity']
-        # With paginate:
-        nb_distributions = len(
-            paginate_dict(
-                self.conn.get_distributions,
-                alc_marker_path=['DistributionList', 'NextMarker'],
-                alc_data_path=['DistributionList', 'Items'],
-                alc_marker_param='Marker'
-            )['DistributionList']['Items']
+        res = paginate_dict(
+            self.conn.list_distributions,
+            alc_marker_path=['DistributionList', 'NextMarker'],
+            alc_data_path=['DistributionList', 'Items'],
+            alc_marker_param='Marker'
         )
-        # Update quota usage
+        if 'Items' not in res['DistributionList']:
+            nb_distributions = 0
+        else:
+            distributions = res['DistributionList']['Items']
+            nb_distributions = len(distributions)
+            for d in distributions:
+                nb_aliases = 0
+                if ('Aliases' in d) and ('Items' in d['Aliases']):
+                    nb_aliases = len(d['Aliases']['Items'])
+                self.limits[
+                    'Alternate domain names (CNAMEs) per distribution'
+                ]._add_current_usage(
+                    nb_aliases,
+                    resource_id=d['Id'],
+                    aws_type='AWS::CloudFront::Distribution',
+                )
+
         self.limits['Distributions per AWS account']._add_current_usage(
             nb_distributions,
             aws_type='AWS::CloudFront::Distribution',
@@ -111,6 +121,16 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             limit_type="AWS::CloudFront::Distribution",
             quotas_name="Web distributions per AWS account",
+        )
+
+        limits["Alternate domain names (CNAMEs) per distribution"] = AwsLimit(
+            "Alternate domain names (CNAMEs) per distribution",
+            self,
+            100,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::Distribution",
+            quotas_name="Alternate domain names (CNAMEs) per distribution",
         )
 
         self.limits = limits
