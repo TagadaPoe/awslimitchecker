@@ -112,6 +112,30 @@ class _CloudfrontService(_AwsService):
                     aws_type='AWS::CloudFront::Distribution',
                 )
 
+                # Count origins
+                nb_origins = 0
+                if ('Origins' in d) and ('Items' in d['Origins']):
+                    nb_origins = len(d['Origins']['Items'])
+                self.limits[
+                    'Origins per distribution'
+                ]._add_current_usage(
+                    nb_origins,
+                    resource_id=d['Id'],
+                    aws_type='AWS::CloudFront::Distribution',
+                )
+
+                # Count origin groups
+                nb_origin_groups = 0
+                if ('OriginGroups' in d) and ('Items' in d['OriginGroups']):
+                    nb_origin_groups = len(d['OriginGroups']['Items'])
+                self.limits[
+                    'Origin groups per distribution'
+                ]._add_current_usage(
+                    nb_origin_groups,
+                    resource_id=d['Id'],
+                    aws_type='AWS::CloudFront::Distribution',
+                )
+
         self.limits['Distributions per AWS account']._add_current_usage(
             nb_distributions,
             aws_type='AWS::CloudFront::Distribution',
@@ -157,6 +181,26 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             limit_type="AWS::CloudFront::Distribution",
             quotas_name="Cache behaviors per distribution",
+        )
+
+        limits["Origins per distribution"] = AwsLimit(
+            "Origins per distribution",
+            self,
+            25,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::Distribution",
+            quotas_name="Origins per distribution",
+        )
+
+        limits["Origin groups per distribution"] = AwsLimit(
+            "Origin groups per distribution",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::Distribution",
+            quotas_name="Origin groups per distribution",
         )
 
         self.limits = limits

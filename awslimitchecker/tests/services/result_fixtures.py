@@ -1344,6 +1344,30 @@ class CloudFront(object):
                 },
                 {
                     'Id': 'ID-DISTRIBUTION-002',
+                    'Origins': {
+                        'Quantity': 3,
+                        'Items': [
+                            {'Id': 'string'},
+                            {'Id': 'string'},
+                            {'Id': 'string'},
+                        ]
+                    },
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-003',
+                    'OriginGroups': {
+                        'Quantity': 1,
+                        'Items': [
+                            {
+                                'Id': 'string',
+                                'FailoverCriteria': {},
+                                'Members': {}
+                            },
+                        ]
+                    },
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-100',
                     'ARN': 'string',
                     'Status': 'string',
                     'LastModifiedTime': datetime(2015, 1, 1),
