@@ -71,6 +71,7 @@ class Test_CloudfrontService(object):
         assert sorted(res.keys()) == sorted(
             [
                 "Alternate domain names (CNAMEs) per distribution",
+                "Cache behaviors per distribution",
                 "Distributions per AWS account",
             ]
         )
@@ -131,7 +132,7 @@ class Test_CloudfrontService(object):
         ) == 1
         assert (
             cls.limits["Distributions per AWS account"].get_current_usage()[0]
-            .get_value() == 2
+            .get_value() == 3
         )
         assert (
             cls.limits["Distributions per AWS account"].get_current_usage()[0]
@@ -140,13 +141,23 @@ class Test_CloudfrontService(object):
 
         assert len(cls.limits[
             "Alternate domain names (CNAMEs) per distribution"
-        ].get_current_usage()) == 2
+        ].get_current_usage()) == 3
         assert cls.limits[
             "Alternate domain names (CNAMEs) per distribution"
         ].get_current_usage()[0].get_value() == 3
         assert cls.limits[
             "Alternate domain names (CNAMEs) per distribution"
         ].get_current_usage()[0].resource_id == "ID-DISTRIBUTION-000"
+
+        assert len(cls.limits[
+            "Cache behaviors per distribution"
+        ].get_current_usage()) == 3
+        assert cls.limits[
+            "Cache behaviors per distribution"
+        ].get_current_usage()[1].resource_id == "ID-DISTRIBUTION-001"
+        assert cls.limits[
+            "Cache behaviors per distribution"
+        ].get_current_usage()[1].get_value() == 4
 
         # Check which methods were called
         assert mock_conn.mock_calls == []

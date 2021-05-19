@@ -1332,6 +1332,18 @@ class CloudFront(object):
                 },
                 {
                     'Id': 'ID-DISTRIBUTION-001',
+                    'CacheBehaviors': {
+                        'Quantity': 4,
+                        'Items': [
+                            {'PathPattern': '', 'TargetOriginId': 'string'},
+                            {'PathPattern': '', 'TargetOriginId': 'string'},
+                            {'PathPattern': '', 'TargetOriginId': 'string'},
+                            {'PathPattern': '', 'TargetOriginId': 'string'},
+                        ]
+                    }
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-002',
                     'ARN': 'string',
                     'Status': 'string',
                     'LastModifiedTime': datetime(2015, 1, 1),

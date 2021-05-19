@@ -85,6 +85,7 @@ class _CloudfrontService(_AwsService):
             distributions = res['DistributionList']['Items']
             nb_distributions = len(distributions)
             for d in distributions:
+                # Count alternate domain names
                 nb_aliases = 0
                 if ('Aliases' in d) and ('Items' in d['Aliases']):
                     nb_aliases = len(d['Aliases']['Items'])
@@ -92,6 +93,21 @@ class _CloudfrontService(_AwsService):
                     'Alternate domain names (CNAMEs) per distribution'
                 ]._add_current_usage(
                     nb_aliases,
+                    resource_id=d['Id'],
+                    aws_type='AWS::CloudFront::Distribution',
+                )
+
+                # Count cache behaviors
+                # Note: the AWS documentation does not specify if the quota
+                # includes the default cache behavior. Assuming here that it is
+                # not included.
+                nb_cache_behaviors = 0
+                if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):
+                    nb_cache_behaviors = len(d['CacheBehaviors']['Items'])
+                self.limits[
+                    'Cache behaviors per distribution'
+                ]._add_current_usage(
+                    nb_cache_behaviors,
                     resource_id=d['Id'],
                     aws_type='AWS::CloudFront::Distribution',
                 )
@@ -131,6 +147,16 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             limit_type="AWS::CloudFront::Distribution",
             quotas_name="Alternate domain names (CNAMEs) per distribution",
+        )
+
+        limits["Cache behaviors per distribution"] = AwsLimit(
+            "Cache behaviors per distribution",
+            self,
+            25,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::Distribution",
+            quotas_name="Cache behaviors per distribution",
         )
 
         self.limits = limits
