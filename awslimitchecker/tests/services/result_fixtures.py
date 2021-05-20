@@ -1368,37 +1368,6 @@ class CloudFront(object):
                     },
                 },
                 {
-                    'Id': 'ID-DISTRIBUTION-004',
-                    'DefaultCacheBehavior': {
-                        'TrustedKeyGroups': {
-                            'Enabled': False,
-                            'Quantity': 2,
-                            'Items': [
-                                'A', 'B',
-                            ]
-                        },
-                    },
-                    'CacheBehaviors': {
-                        'Quantity': 123,
-                        'Items': [
-                            {
-                                'TrustedKeyGroups': {
-                                    'Enabled': True,
-                                    'Quantity': 3,
-                                    'Items': ['A', 'B', 'C']
-                                },
-                            },
-                            {
-                                'TrustedKeyGroups': {
-                                    'Enabled': True,
-                                    'Quantity': 1,
-                                    'Items': ['D']
-                                },
-                            }
-                        ]
-                    }
-                },
-                {
                     'Id': 'ID-DISTRIBUTION-100',
                     'ARN': 'string',
                     'Status': 'string',
@@ -1692,6 +1661,51 @@ class CloudFront(object):
                             'ICPRecordalStatus': 'APPROVED'
                         },
                     ]
+                },
+            ]
+        }
+    }
+    
+    test_find_usage_distributions_keygroups = {
+        'DistributionList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 2,
+            'Items': [
+                {
+                    'Id': 'ID-DISTRIBUTION-001',
+                    'DefaultCacheBehavior': {
+                        'TrustedKeyGroups': {
+                            'Enabled': False,
+                            'Quantity': 2,
+                            'Items': [
+                                'A', 'B',
+                            ]
+                        },
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 2,
+                        'Items': [
+                            {
+                                'PathPattern': 'path01',
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 0,
+                                    'Items': []
+                                }
+                            },
+                            {
+                                'PathPattern': 'path02',
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 3,
+                                    'Items': ['A', 'B', 'C']
+                                },
+                            }
+                        ]
+                    }
                 },
             ]
         }

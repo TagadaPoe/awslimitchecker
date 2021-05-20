@@ -75,7 +75,8 @@ class Test_CloudfrontService(object):
                 "Distributions per AWS account",
                 "Origins per distribution",
                 "Origin groups per distribution",
-                "Key groups associated with a single distribution"
+                "Key groups associated with a single distribution",
+                "Key groups associated with a single cache behavior"
             ]
         )
         for name, limit in res.items():
@@ -167,12 +168,55 @@ class Test_CloudfrontService(object):
             == "ID-DISTRIBUTION-003"
         assert cls.limits[limit].get_current_usage()[3].get_value() == 1
 
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        # assert mock_connect.mock_calls == [call()]
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_distributions,
+                alc_marker_path=["DistributionList", "NextMarker"],
+                alc_data_path=["DistributionList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_distributions_keygroups(self):
+        """
+        Check that obtaining distributions usage is correct, by mocking AWS
+        response.
+        """
+        response = result_fixtures.CloudFront.\
+            test_find_usage_distributions_keygroups
+
+        mock_conn = Mock()
+
+        # with patch("%s.connect" % pb) as mock_connect:
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = response
+            cls._find_usage_distributions()
+
         limit = "Key groups associated with a single distribution"
-        assert len(cls.limits[limit].get_current_usage()) \
-            == expected_nb_distributions
-        assert cls.limits[limit].get_current_usage()[4].resource_id \
-            == "ID-DISTRIBUTION-004"
-        assert cls.limits[limit].get_current_usage()[4].get_value() == 4
+        assert len(cls.limits[limit].get_current_usage()) == 1  # 1 distribution
+        assert cls.limits[limit].get_current_usage()[0].resource_id \
+            == "ID-DISTRIBUTION-001"
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 3
+
+        limit = "Key groups associated with a single cache behavior"
+        assert len(cls.limits[limit].get_current_usage()) == 3  # 3 cache behav.
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "ID-DISTRIBUTION-001-default-cache-behavior" in usage_map
+        assert usage_map["ID-DISTRIBUTION-001-default-cache-behavior"
+                         ].get_value() == 2
+        assert "ID-DISTRIBUTION-001-cache-behavior-path01" in usage_map
+        assert usage_map["ID-DISTRIBUTION-001-cache-behavior-path01"
+                         ].get_value() == 0
+        assert "ID-DISTRIBUTION-001-cache-behavior-path02" in usage_map
+        assert usage_map["ID-DISTRIBUTION-001-cache-behavior-path02"
+                         ].get_value() == 3
 
         # Check which methods were called
         assert mock_conn.mock_calls == []

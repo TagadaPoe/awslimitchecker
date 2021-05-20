@@ -139,17 +139,36 @@ class _CloudfrontService(_AwsService):
                 keygroups = set()
                 if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):
                     for cb in d['CacheBehaviors']['Items']:
+                        nb_keygroups = 0
                         if ('TrustedKeyGroups' in cb) and (
                                 'Items' in cb['TrustedKeyGroups']):
                             # counting the KG even if not Enabled
                             keygroups.update(cb['TrustedKeyGroups']['Items'])
-                if 'DefaultCacheBahavior' in d:
+                            nb_keygroups = len(cb['TrustedKeyGroups']['Items'])
+                        self.limits[
+                            'Key groups associated with a single cache behavior'
+                        ]._add_current_usage(
+                            nb_keygroups,
+                            resource_id="{}-cache-behavior-{}".format(
+                                d['Id'], cb['PathPattern']),
+                            aws_type='AWS::CloudFront::Distribution',
+                        )
+                if 'DefaultCacheBehavior' in d:
                     cb = d['DefaultCacheBehavior']
+                    nb_keygroups = 0
                     if ('TrustedKeyGroups' in cb) and (
                             'Items' in cb['TrustedKeyGroups']):
                         # counting the KG even if not Enabled
                         keygroups.update(cb['TrustedKeyGroups']['Items'])
-                # TODO: should we add keygroups from managed cache policies ?
+                        nb_keygroups = len(cb['TrustedKeyGroups']['Items'])
+                    self.limits[
+                        'Key groups associated with a single cache behavior'
+                    ]._add_current_usage(
+                        nb_keygroups,
+                        resource_id="{}-default-cache-behavior".format(
+                            d['Id']),
+                        aws_type='AWS::CloudFront::Distribution',
+                    )
                 self.limits[
                     'Key groups associated with a single distribution'
                 ]._add_current_usage(
@@ -225,6 +244,8 @@ class _CloudfrontService(_AwsService):
             quotas_name="Origin groups per distribution",
         )
 
+        # This limit is listed by the "Service Quotas" service, but not in the
+        # CloudFront documentation.
         limits["Key groups associated with a single distribution"] = AwsLimit(
             "Key groups associated with a single distribution",
             self,
@@ -233,6 +254,17 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             limit_type="AWS::CloudFront::Distribution",
             quotas_name="Key groups associated with a single distribution",
+        )
+
+        # This limit is listed in the CloudFront documentation, but not in the
+        # "Service Quotas" service.
+        limits["Key groups associated with a single cache behavior"] = AwsLimit(
+            "Key groups associated with a single cache behavior",
+            self,
+            4,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::Distribution",
         )
 
         self.limits = limits
