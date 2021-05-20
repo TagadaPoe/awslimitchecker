@@ -76,7 +76,8 @@ class Test_CloudfrontService(object):
                 "Origins per distribution",
                 "Origin groups per distribution",
                 "Key groups associated with a single distribution",
-                "Key groups associated with a single cache behavior"
+                "Key groups associated with a single cache behavior",
+                "Key groups per AWS account"
             ]
         )
         for name, limit in res.items():
@@ -100,6 +101,7 @@ class Test_CloudfrontService(object):
             pb,
             connect=DEFAULT,
             _find_usage_distributions=DEFAULT,
+            _find_usage_keygroups=DEFAULT,
             autospec=True
         ) as mocks:
             cls = _CloudfrontService(21, 43, {}, None)
@@ -107,10 +109,11 @@ class Test_CloudfrontService(object):
             cls.find_usage()
 
         assert cls._have_usage is True
-        assert len(mocks) == 2
+        assert len(mocks) == 3
         # other methods should have been called
         for x in [
             "_find_usage_distributions",
+            "_find_usage_keygroups"
         ]:
             assert mocks[x].mock_calls == [call(cls)]
 
@@ -226,6 +229,36 @@ class Test_CloudfrontService(object):
                 mock_conn.list_distributions,
                 alc_marker_path=["DistributionList", "NextMarker"],
                 alc_data_path=["DistributionList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_keygroups(self):
+        """
+        Check that obtaining keygroups usage is correct, by mocking AWS
+        response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = \
+                result_fixtures.CloudFront.test_find_usage_keygroups
+            cls._find_usage_keygroups()
+
+        # Check that usage values are correctly set
+        limit = "Key groups per AWS account"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 2
+        assert cls.limits[limit].get_current_usage()[0].resource_id is None
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_key_groups,
+                alc_marker_path=["KeyGroupList", "NextMarker"],
+                alc_data_path=["KeyGroupList", "Items"],
                 alc_marker_param="Marker",
             )
         ]

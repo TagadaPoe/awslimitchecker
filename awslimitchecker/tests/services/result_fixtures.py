@@ -1711,6 +1711,30 @@ class CloudFront(object):
         }
     }
 
+    test_find_usage_keygroups = {
+        'KeyGroupList': {
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'Quantity': 123,
+            'Items': [
+                {
+                    'KeyGroup': {
+                        'Id': 'kg01',
+                        'LastModifiedTime': datetime(2015, 1, 1),
+                        'KeyGroupConfig': {}
+                    }
+                },
+                {
+                    'KeyGroup': {
+                        'Id': 'kg02',
+                        'LastModifiedTime': datetime(2015, 1, 1),
+                        'KeyGroupConfig': {}
+                    }
+                },
+            ]
+        }
+    }
+
 
 class ELB(object):
 

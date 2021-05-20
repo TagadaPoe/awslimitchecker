@@ -65,6 +65,7 @@ class _CloudfrontService(_AwsService):
             lim._reset_usage()
 
         self._find_usage_distributions()
+        self._find_usage_keygroups()
 
         self._have_usage = True
         logger.debug("Done checking usage.")
@@ -182,6 +183,27 @@ class _CloudfrontService(_AwsService):
             aws_type='AWS::CloudFront::Distribution',
         )
 
+    def _find_usage_keygroups(self):
+        """find usage for CloudFront KeyGroups"""
+
+        # Read usage from AWS
+        res = paginate_dict(
+            self.conn.list_key_groups,
+            alc_marker_path=['KeyGroupList', 'NextMarker'],
+            alc_data_path=['KeyGroupList', 'Items'],
+            alc_marker_param='Marker'
+        )
+        if 'Items' not in res['KeyGroupList']:
+            nb_keygroups = 0
+        else:
+            keygroups = res['KeyGroupList']['Items']
+            nb_keygroups = len(keygroups)
+
+        self.limits['Key groups per AWS account']._add_current_usage(
+            nb_keygroups,
+            aws_type='AWS::CloudFront::KeyGroup',
+        )
+
     def get_limits(self):
         """
         Return all known limits for this service, as a dict of their names
@@ -265,6 +287,16 @@ class _CloudfrontService(_AwsService):
             self.warning_threshold,
             self.critical_threshold,
             limit_type="AWS::CloudFront::Distribution",
+        )
+
+        limits["Key groups per AWS account"] = AwsLimit(
+            "Key groups per AWS account",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::KeyGroup",
+            quotas_name="Key groups per AWS account"
         )
 
         self.limits = limits
