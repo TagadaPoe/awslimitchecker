@@ -140,9 +140,18 @@ class _CloudfrontService(_AwsService):
                 )
 
                 # Count keygroups in cache behaviors
+                # Count whitelisted cookies in cache behaviors
+                # Count whitelisted headers in cache behaviors
+                # Count whitelisted query strings in cache behaviors
                 keygroups = set()
+
+                # Iterate over additional cache behaviors
                 if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):
                     for cb in d['CacheBehaviors']['Items']:
+                        res_id = "{}-cache-behavior-{}".format(
+                            d['Id'], cb['PathPattern'])
+
+                        # Count key groups
                         nb_keygroups = 0
                         if ('TrustedKeyGroups' in cb) and (
                                 'Items' in cb['TrustedKeyGroups']):
@@ -151,28 +160,90 @@ class _CloudfrontService(_AwsService):
                             nb_keygroups = len(cb['TrustedKeyGroups']['Items'])
                         self.limits[
                             'Key groups associated with a single cache behavior'
-                        ]._add_current_usage(
-                            nb_keygroups,
-                            resource_id="{}-cache-behavior-{}".format(
-                                d['Id'], cb['PathPattern']),
-                            aws_type='AWS::CloudFront::Distribution',
-                        )
+                        ]._add_current_usage(nb_keygroups, resource_id=res_id)
+
+                        # Count whitelisted cookies
+                        nb_cookies = 0
+                        try:
+                            nb_cookies = len(cb['ForwardedValues']['Cookies'][
+                                'WhitelistedNames']['Items'])
+                        except KeyError:
+                            pass
+                        self.limits[
+                            'Whitelisted cookies per cache behavior'
+                        ]._add_current_usage(nb_cookies, resource_id=res_id)
+
+                        # Count whitelisted headers
+                        nb_headers = 0
+                        try:
+                            nb_headers = len(
+                                cb['ForwardedValues']['Headers']['Items'])
+                        except KeyError:
+                            pass
+                        self.limits[
+                            'Whitelisted headers per cache behavior'
+                        ]._add_current_usage(nb_headers, resource_id=res_id)
+
+                        # Count whitelisted query strings
+                        nb_querystring = 0
+                        try:
+                            nb_querystring = len(cb['ForwardedValues'][
+                                'QueryStringCacheKeys']['Items'])
+                        except KeyError:
+                            pass
+                        self.limits[
+                            'Whitelisted query strings per cache behavior'
+                        ]._add_current_usage(nb_querystring, resource_id=res_id)
+
+                # Default cache behavior
                 if 'DefaultCacheBehavior' in d:
                     cb = d['DefaultCacheBehavior']
+                    res_id = f"{d['Id']}-default-cache-behavior"
+
                     nb_keygroups = 0
                     if ('TrustedKeyGroups' in cb) and (
                             'Items' in cb['TrustedKeyGroups']):
                         # counting the KG even if not Enabled
                         keygroups.update(cb['TrustedKeyGroups']['Items'])
                         nb_keygroups = len(cb['TrustedKeyGroups']['Items'])
+
                     self.limits[
                         'Key groups associated with a single cache behavior'
-                    ]._add_current_usage(
-                        nb_keygroups,
-                        resource_id="{}-default-cache-behavior".format(
-                            d['Id']),
-                        aws_type='AWS::CloudFront::Distribution',
-                    )
+                    ]._add_current_usage(nb_keygroups, resource_id=res_id)
+
+                    # Count whitelisted cookies
+                    nb_cookies = 0
+                    try:
+                        nb_cookies = len(cb['ForwardedValues']['Cookies'][
+                            'WhitelistedNames']['Items'])
+                    except KeyError:
+                        pass
+                    self.limits[
+                        'Whitelisted cookies per cache behavior'
+                    ]._add_current_usage(nb_cookies, resource_id=res_id)
+
+                    # Count whitelisted headers
+                    nb_headers = 0
+                    try:
+                        nb_headers = len(
+                            cb['ForwardedValues']['Headers']['Items'])
+                    except KeyError:
+                        pass
+                    self.limits[
+                        'Whitelisted headers per cache behavior'
+                    ]._add_current_usage(nb_headers, resource_id=res_id)
+
+                    # Count whitelisted query strings
+                    nb_querystring = 0
+                    try:
+                        nb_querystring = len(cb['ForwardedValues'][
+                            'QueryStringCacheKeys']['Items'])
+                    except KeyError:
+                        pass
+                    self.limits[
+                        'Whitelisted query strings per cache behavior'
+                    ]._add_current_usage(nb_querystring, resource_id=res_id)
+
                 self.limits[
                     'Key groups associated with a single distribution'
                 ]._add_current_usage(
@@ -401,6 +472,33 @@ class _CloudfrontService(_AwsService):
             self.warning_threshold,
             self.critical_threshold,
             quotas_name="Origin request policies per AWS account"
+        )
+
+        limits["Whitelisted cookies per cache behavior"] = AwsLimit(
+            "Whitelisted cookies per cache behavior",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Whitelisted cookies per cache behavior"
+        )
+
+        limits["Whitelisted headers per cache behavior"] = AwsLimit(
+            "Whitelisted headers per cache behavior",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Whitelisted headers per cache behavior"
+        )
+
+        limits["Whitelisted query strings per cache behavior"] = AwsLimit(
+            "Whitelisted query strings per cache behavior",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Whitelisted query strings per cache behavior"
         )
 
         self.limits = limits

@@ -81,6 +81,9 @@ class Test_CloudfrontService(object):
                 "Origin access identities per account",
                 "Cache policies per AWS account",
                 "Origin request policies per AWS account",
+                "Whitelisted cookies per cache behavior",
+                "Whitelisted headers per cache behavior",
+                "Whitelisted query strings per cache behavior"
             ]
         )
         for name, limit in res.items():
@@ -391,6 +394,68 @@ class Test_CloudfrontService(object):
                 Type='custom',
                 alc_marker_path=["OriginRequestPolicyList", "NextMarker"],
                 alc_data_path=["OriginRequestPolicyList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_per_cache_behavior(self):
+        """
+        Check that obtaining origin_request_policies usage is correct, by
+        mocking AWS response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = result_fixtures.CloudFront\
+                .test_find_usage_per_cache_behavior
+            cls._find_usage_distributions()
+
+        # Check that usage values are correctly set
+
+        limit = "Whitelisted cookies per cache behavior"
+        assert len(cls.limits[limit].get_current_usage()) == 2
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "ID-DISTRIBUTION-100-default-cache-behavior" in usage_map
+        assert usage_map["ID-DISTRIBUTION-100-default-cache-behavior"
+                         ].get_value() == 3
+        assert "ID-DISTRIBUTION-100-cache-behavior-path01" in usage_map
+        assert usage_map["ID-DISTRIBUTION-100-cache-behavior-path01"
+                         ].get_value() == 1
+
+        limit = "Whitelisted headers per cache behavior"
+        assert len(cls.limits[limit].get_current_usage()) == 2
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "ID-DISTRIBUTION-100-default-cache-behavior" in usage_map
+        assert usage_map["ID-DISTRIBUTION-100-default-cache-behavior"
+                         ].get_value() == 4
+        assert "ID-DISTRIBUTION-100-cache-behavior-path01" in usage_map
+        assert usage_map["ID-DISTRIBUTION-100-cache-behavior-path01"
+                         ].get_value() == 2
+
+        limit = "Whitelisted query strings per cache behavior"
+        assert len(cls.limits[limit].get_current_usage()) == 2
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "ID-DISTRIBUTION-100-default-cache-behavior" in usage_map
+        assert usage_map["ID-DISTRIBUTION-100-default-cache-behavior"
+                         ].get_value() == 5
+        assert "ID-DISTRIBUTION-100-cache-behavior-path01" in usage_map
+        assert usage_map["ID-DISTRIBUTION-100-cache-behavior-path01"
+                         ].get_value() == 3
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_distributions,
+                alc_marker_path=["DistributionList", "NextMarker"],
+                alc_data_path=["DistributionList", "Items"],
                 alc_marker_param="Marker",
             )
         ]

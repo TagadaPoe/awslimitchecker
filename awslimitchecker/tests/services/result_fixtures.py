@@ -1798,6 +1798,67 @@ class CloudFront(object):
         }
     }
 
+    test_find_usage_per_cache_behavior = {
+        'DistributionList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 1,
+            'Items': [
+                {
+                    'Id': 'ID-DISTRIBUTION-100',
+                    'DefaultCacheBehavior': {
+                        'ForwardedValues': {
+                            'QueryString': True,
+                            'Cookies': {
+                                'Forward': 'whitelist',
+                                'WhitelistedNames': {
+                                    'Quantity': 3,
+                                    'Items': ['a', 'b', 'c']
+                                }
+                            },
+                            'Headers': {
+                                'Quantity': 4,
+                                'Items': ['a', 'b', 'c', 'd']
+                            },
+                            'QueryStringCacheKeys': {
+                                'Quantity': 5,
+                                'Items': ['a', 'b', 'c', 'd', 'e']
+                            }
+                        },
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 1,
+                        'Items': [
+                            {
+                                'PathPattern': 'path01',
+                                'ForwardedValues': {
+                                    'QueryString': True,
+                                    'Cookies': {
+                                        'Forward': 'whitelist',
+                                        'WhitelistedNames': {
+                                            'Quantity': 1,
+                                            'Items': ['']
+                                        }
+                                    },
+                                    'Headers': {
+                                        'Quantity': 2,
+                                        'Items': ['', '']
+                                    },
+                                    'QueryStringCacheKeys': {
+                                        'Quantity': 3,
+                                        'Items': ['', '', '']
+                                    }
+                                }
+                            },
+                        ]
+                    },
+                },
+            ]
+        }
+    }
+
 
 class ELB(object):
 
