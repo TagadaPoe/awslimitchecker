@@ -1735,6 +1735,69 @@ class CloudFront(object):
         }
     }
 
+    test_find_usage_origin_access_identities = {
+        'CloudFrontOriginAccessIdentityList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 3,
+            'Items': [
+                {'Id': 'oai01', 'S3CanonicalUserId': 'string', 'Comment': ''},
+                {'Id': 'oai02', 'S3CanonicalUserId': 'string', 'Comment': ''},
+                {'Id': 'oai03', 'S3CanonicalUserId': 'string', 'Comment': ''}
+            ]
+        }
+    }
+
+    test_find_usage_cache_policies = {
+        'CachePolicyList': {
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'Quantity': 4,
+            'Items': [
+                {
+                    'Type': 'custom',
+                    'CachePolicy': {'Id': 'CP01', 'CachePolicyConfig': {}}
+                },
+                {
+                    'Type': 'custom',
+                    'CachePolicy': {'Id': 'CP02', 'CachePolicyConfig': {}}
+                },
+                {
+                    'Type': 'custom',
+                    'CachePolicy': {'Id': 'CP03', 'CachePolicyConfig': {}}
+                },
+                {
+                    'Type': 'custom',
+                    'CachePolicy': {'Id': 'CP04', 'CachePolicyConfig': {}}
+                },
+            ]
+        }
+    }
+
+    test_find_usage_origin_request_policies = {
+        'OriginRequestPolicyList': {
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'Quantity': 2,
+            'Items': [
+                {
+                    'Type': 'custom',
+                    'OriginRequestPolicy': {
+                        'Id': 'ORP01', 'OriginRequestPolicyConfig': {}
+                    }
+                },
+                {
+                    'Type': 'custom',
+                    'OriginRequestPolicy': {
+                        'Id': 'ORP02', 'OriginRequestPolicyConfig': {}
+                    }
+                }
+            ]
+        }
+    }
+
 
 class ELB(object):
 

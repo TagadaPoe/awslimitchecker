@@ -66,6 +66,9 @@ class _CloudfrontService(_AwsService):
 
         self._find_usage_distributions()
         self._find_usage_keygroups()
+        self._find_usage_origin_access_identities()
+        self._find_usage_cache_policies()
+        self._find_usage_origin_request_policies()
 
         self._have_usage = True
         logger.debug("Done checking usage.")
@@ -204,6 +207,80 @@ class _CloudfrontService(_AwsService):
             aws_type='AWS::CloudFront::KeyGroup',
         )
 
+    def _find_usage_origin_access_identities(self):
+        """find usage for CloudFront origin access identities"""
+
+        # Read usage from AWS
+        res = paginate_dict(
+            self.conn.list_cloud_front_origin_access_identities,
+            alc_marker_path=['CloudFrontOriginAccessIdentityList',
+                             'NextMarker'],
+            alc_data_path=['CloudFrontOriginAccessIdentityList', 'Items'],
+            alc_marker_param='Marker'
+        )
+        if 'Items' not in res['CloudFrontOriginAccessIdentityList']:
+            nb_origin_access_identities = 0
+        else:
+            origin_access_identities = res['CloudFrontOriginAccessIdentityList'
+                                           ]['Items']
+            nb_origin_access_identities = len(origin_access_identities)
+
+        self.limits["Origin access identities per account"]._add_current_usage(
+            nb_origin_access_identities,
+            aws_type='AWS::CloudFront::KeyGroup',
+        )
+
+    def _find_usage_cache_policies(self):
+        """find usage for CloudFront cache policies"""
+
+        # Read usage from AWS
+        res = paginate_dict(
+            # count only the custom cache policies, not the managed ones
+            self.conn.list_cache_policies,
+            Type='custom',
+            alc_marker_path=['CachePolicyList',
+                             'NextMarker'],
+            alc_data_path=['CachePolicyList', 'Items'],
+            alc_marker_param='Marker'
+        )
+        if 'Items' not in res['CachePolicyList']:
+            nb_resources = 0
+        else:
+            cache_policies = res['CachePolicyList'
+                                 ]['Items']
+            nb_resources = len(cache_policies)
+
+        self.limits["Cache policies per AWS account"]._add_current_usage(
+            nb_resources,
+            aws_type='AWS::CloudFront::CachePolicy',
+        )
+
+    def _find_usage_origin_request_policies(self):
+        """find usage for CloudFront origin request policies"""
+
+        # Read usage from AWS
+        res = paginate_dict(
+            # count only the custom origin request policies
+            self.conn.list_origin_request_policies,
+            Type='custom',
+            alc_marker_path=['OriginRequestPolicyList',
+                             'NextMarker'],
+            alc_data_path=['OriginRequestPolicyList', 'Items'],
+            alc_marker_param='Marker'
+        )
+        if 'Items' not in res['OriginRequestPolicyList']:
+            nb_resources = 0
+        else:
+            origin_request_policies = res['OriginRequestPolicyList'
+                                          ]['Items']
+            nb_resources = len(origin_request_policies)
+
+        self.limits["Origin request policies per AWS account"
+                    ]._add_current_usage(
+            nb_resources,
+            aws_type='AWS::CloudFront::OriginRequestPolicy',
+        )
+
     def get_limits(self):
         """
         Return all known limits for this service, as a dict of their names
@@ -297,6 +374,33 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             limit_type="AWS::CloudFront::KeyGroup",
             quotas_name="Key groups per AWS account"
+        )
+
+        limits["Origin access identities per account"] = AwsLimit(
+            "Origin access identities per account",
+            self,
+            100,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Origin access identities per account"
+        )
+
+        limits["Cache policies per AWS account"] = AwsLimit(
+            "Cache policies per AWS account",
+            self,
+            20,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Cache policies per AWS account"
+        )
+
+        limits["Origin request policies per AWS account"] = AwsLimit(
+            "Origin request policies per AWS account",
+            self,
+            20,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Origin request policies per AWS account"
         )
 
         self.limits = limits

@@ -77,7 +77,10 @@ class Test_CloudfrontService(object):
                 "Origin groups per distribution",
                 "Key groups associated with a single distribution",
                 "Key groups associated with a single cache behavior",
-                "Key groups per AWS account"
+                "Key groups per AWS account",
+                "Origin access identities per account",
+                "Cache policies per AWS account",
+                "Origin request policies per AWS account",
             ]
         )
         for name, limit in res.items():
@@ -102,6 +105,9 @@ class Test_CloudfrontService(object):
             connect=DEFAULT,
             _find_usage_distributions=DEFAULT,
             _find_usage_keygroups=DEFAULT,
+            _find_usage_origin_access_identities=DEFAULT,
+            _find_usage_cache_policies=DEFAULT,
+            _find_usage_origin_request_policies=DEFAULT,
             autospec=True
         ) as mocks:
             cls = _CloudfrontService(21, 43, {}, None)
@@ -109,11 +115,14 @@ class Test_CloudfrontService(object):
             cls.find_usage()
 
         assert cls._have_usage is True
-        assert len(mocks) == 3
+        assert len(mocks) == 6
         # other methods should have been called
         for x in [
             "_find_usage_distributions",
-            "_find_usage_keygroups"
+            "_find_usage_keygroups",
+            "_find_usage_origin_access_identities",
+            "_find_usage_cache_policies",
+            "_find_usage_origin_request_policies"
         ]:
             assert mocks[x].mock_calls == [call(cls)]
 
@@ -292,6 +301,99 @@ class Test_CloudfrontService(object):
             cls.limits["Distributions per AWS account"].get_current_usage()[0]
             .resource_id is None
         )
+
+    def test_find_usage_origin_access_identities(self):
+        """
+        Check that obtaining origin_access_identities usage is correct, by
+        mocking AWS response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = result_fixtures.CloudFront\
+                .test_find_usage_origin_access_identities
+            cls._find_usage_origin_access_identities()
+
+        # Check that usage values are correctly set
+        limit = "Origin access identities per account"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 3
+        assert cls.limits[limit].get_current_usage()[0].resource_id is None
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_cloud_front_origin_access_identities,
+                alc_marker_path=["CloudFrontOriginAccessIdentityList",
+                                 "NextMarker"],
+                alc_data_path=["CloudFrontOriginAccessIdentityList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_cache_policies(self):
+        """
+        Check that obtaining cache_policies usage is correct, by
+        mocking AWS response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = result_fixtures.CloudFront\
+                .test_find_usage_cache_policies
+            cls._find_usage_cache_policies()
+
+        # Check that usage values are correctly set
+        limit = "Cache policies per AWS account"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 4
+        assert cls.limits[limit].get_current_usage()[0].resource_id is None
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_cache_policies,
+                Type='custom',
+                alc_marker_path=["CachePolicyList", "NextMarker"],
+                alc_data_path=["CachePolicyList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_origin_request_policies(self):
+        """
+        Check that obtaining origin_request_policies usage is correct, by
+        mocking AWS response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = result_fixtures.CloudFront\
+                .test_find_usage_origin_request_policies
+            cls._find_usage_origin_request_policies()
+
+        # Check that usage values are correctly set
+        limit = "Origin request policies per AWS account"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 2
+        assert cls.limits[limit].get_current_usage()[0].resource_id is None
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_origin_request_policies,
+                Type='custom',
+                alc_marker_path=["OriginRequestPolicyList", "NextMarker"],
+                alc_data_path=["OriginRequestPolicyList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
 
     def test_required_iam_permissions(self):
         cls = _CloudfrontService(21, 43, {}, None)
