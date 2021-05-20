@@ -1367,6 +1367,37 @@ class CloudFront(object):
                     },
                 },
                 {
+                    'Id': 'ID-DISTRIBUTION-004',
+                    'DefaultCacheBehavior': {
+                        'TrustedKeyGroups': {
+                            'Enabled': False,
+                            'Quantity': 2,
+                            'Items': [
+                                'A', 'B',
+                            ]
+                        },
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 3,
+                                    'Items': ['A', 'B', 'C']
+                                },
+                            },
+                            {
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 1,
+                                    'Items': ['D']
+                                },
+                            }
+                        ]
+                    }
+                },
+                {
                     'Id': 'ID-DISTRIBUTION-100',
                     'ARN': 'string',
                     'Status': 'string',

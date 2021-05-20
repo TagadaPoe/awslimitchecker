@@ -74,7 +74,8 @@ class Test_CloudfrontService(object):
                 "Cache behaviors per distribution",
                 "Distributions per AWS account",
                 "Origins per distribution",
-                "Origin groups per distribution"
+                "Origin groups per distribution",
+                "Key groups associated with a single distribution"
             ]
         )
         for name, limit in res.items():
@@ -132,57 +133,46 @@ class Test_CloudfrontService(object):
             response['DistributionList']['Items'])
 
         # Check that usage values are correctly set
-        assert len(
-            cls.limits["Distributions per AWS account"].get_current_usage()
-        ) == 1
-        assert (
-            cls.limits["Distributions per AWS account"].get_current_usage()[0]
-            .get_value() == expected_nb_distributions
-        )
-        assert (
-            cls.limits["Distributions per AWS account"].get_current_usage()[0]
-            .resource_id is None
-        )
+        limit = "Distributions per AWS account"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() \
+            == expected_nb_distributions
+        assert cls.limits[limit].get_current_usage()[0].resource_id is None
 
-        assert len(cls.limits[
-            "Alternate domain names (CNAMEs) per distribution"
-        ].get_current_usage()) == expected_nb_distributions
-        assert cls.limits[
-            "Alternate domain names (CNAMEs) per distribution"
-        ].get_current_usage()[0].get_value() == 3
-        assert cls.limits[
-            "Alternate domain names (CNAMEs) per distribution"
-        ].get_current_usage()[0].resource_id == "ID-DISTRIBUTION-000"
+        limit = "Alternate domain names (CNAMEs) per distribution"
+        assert len(cls.limits[limit].get_current_usage()) \
+            == expected_nb_distributions
+        assert cls.limits[limit].get_current_usage()[0].resource_id \
+            == "ID-DISTRIBUTION-000"
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 3
 
-        assert len(cls.limits[
-            "Cache behaviors per distribution"
-        ].get_current_usage()) == expected_nb_distributions
-        assert cls.limits[
-            "Cache behaviors per distribution"
-        ].get_current_usage()[1].resource_id == "ID-DISTRIBUTION-001"
-        assert cls.limits[
-            "Cache behaviors per distribution"
-        ].get_current_usage()[1].get_value() == 4
+        limit = "Cache behaviors per distribution"
+        assert len(cls.limits[limit].get_current_usage()) \
+            == expected_nb_distributions
+        assert cls.limits[limit].get_current_usage()[1].resource_id \
+            == "ID-DISTRIBUTION-001"
+        assert cls.limits[limit].get_current_usage()[1].get_value() == 4
 
-        assert len(cls.limits[
-            "Origins per distribution"
-        ].get_current_usage()) == expected_nb_distributions
-        assert cls.limits[
-            "Origins per distribution"
-        ].get_current_usage()[2].resource_id == "ID-DISTRIBUTION-002"
-        assert cls.limits[
-            "Origins per distribution"
-        ].get_current_usage()[2].get_value() == 3
+        limit = "Origins per distribution"
+        assert len(cls.limits[limit].get_current_usage()) \
+            == expected_nb_distributions
+        assert cls.limits[limit].get_current_usage()[2].resource_id \
+            == "ID-DISTRIBUTION-002"
+        assert cls.limits[limit].get_current_usage()[2].get_value() == 3
 
-        assert len(cls.limits[
-            "Origin groups per distribution"
-        ].get_current_usage()) == expected_nb_distributions
-        assert cls.limits[
-            "Origin groups per distribution"
-        ].get_current_usage()[3].resource_id == "ID-DISTRIBUTION-003"
-        assert cls.limits[
-            "Origin groups per distribution"
-        ].get_current_usage()[3].get_value() == 1
+        limit = "Origin groups per distribution"
+        assert len(cls.limits[limit].get_current_usage()) \
+            == expected_nb_distributions
+        assert cls.limits[limit].get_current_usage()[3].resource_id \
+            == "ID-DISTRIBUTION-003"
+        assert cls.limits[limit].get_current_usage()[3].get_value() == 1
+
+        limit = "Key groups associated with a single distribution"
+        assert len(cls.limits[limit].get_current_usage()) \
+            == expected_nb_distributions
+        assert cls.limits[limit].get_current_usage()[4].resource_id \
+            == "ID-DISTRIBUTION-004"
+        assert cls.limits[limit].get_current_usage()[4].get_value() == 4
 
         # Check which methods were called
         assert mock_conn.mock_calls == []

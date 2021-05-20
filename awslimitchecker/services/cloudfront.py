@@ -136,6 +136,29 @@ class _CloudfrontService(_AwsService):
                     aws_type='AWS::CloudFront::Distribution',
                 )
 
+                # Count keygroups in cache behaviors
+                keygroups = set()
+                if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):
+                    for cb in d['CacheBehaviors']['Items']:
+                        if ('TrustedKeyGroups' in cb) and (
+                                'Items' in cb['TrustedKeyGroups']):
+                            # counting the KG even if not Enabled
+                            keygroups.update(cb['TrustedKeyGroups']['Items'])
+                if 'DefaultCacheBahavior' in d:
+                    cb = d['DefaultCacheBehavior']
+                    if ('TrustedKeyGroups' in cb) and (
+                            'Items' in cb['TrustedKeyGroups']):
+                        # counting the KG even if not Enabled
+                        keygroups.update(cb['TrustedKeyGroups']['Items'])
+                # TODO: should we add keygroups from managed cache policies ?
+                self.limits[
+                    'Key groups associated with a single distribution'
+                ]._add_current_usage(
+                    len(keygroups),
+                    resource_id=d['Id'],
+                    aws_type='AWS::CloudFront::Distribution',
+                )
+
         self.limits['Distributions per AWS account']._add_current_usage(
             nb_distributions,
             aws_type='AWS::CloudFront::Distribution',
@@ -201,6 +224,16 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             limit_type="AWS::CloudFront::Distribution",
             quotas_name="Origin groups per distribution",
+        )
+
+        limits["Key groups associated with a single distribution"] = AwsLimit(
+            "Key groups associated with a single distribution",
+            self,
+            4,
+            self.warning_threshold,
+            self.critical_threshold,
+            limit_type="AWS::CloudFront::Distribution",
+            quotas_name="Key groups associated with a single distribution",
         )
 
         self.limits = limits
