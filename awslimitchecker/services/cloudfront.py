@@ -98,7 +98,7 @@ class _CloudfrontService(_AwsService):
                 )
 
                 # Count cache behaviors
-                # Note: the AWS documentation does not specify this, but 
+                # Note: the AWS documentation does not specify this, but
                 # the quota includes the default cache behavior.
                 nb_cache_behaviors = 1  # 1 for default cache behavior
                 if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):

@@ -1665,7 +1665,7 @@ class CloudFront(object):
             ]
         }
     }
-    
+
     test_find_usage_distributions_keygroups = {
         'DistributionList': {
             'Marker': 'string',
