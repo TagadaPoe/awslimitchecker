@@ -1332,6 +1332,7 @@ class CloudFront(object):
                 },
                 {
                     'Id': 'ID-DISTRIBUTION-001',
+                    'DefaultCacheBehavior': {},
                     'CacheBehaviors': {
                         'Quantity': 4,
                         'Items': [

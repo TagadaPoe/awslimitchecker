@@ -98,12 +98,11 @@ class _CloudfrontService(_AwsService):
                 )
 
                 # Count cache behaviors
-                # Note: the AWS documentation does not specify if the quota
-                # includes the default cache behavior. Assuming here that it is
-                # not included.
-                nb_cache_behaviors = 0
+                # Note: the AWS documentation does not specify this, but 
+                # the quota includes the default cache behavior.
+                nb_cache_behaviors = 1  # 1 for default cache behavior
                 if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):
-                    nb_cache_behaviors = len(d['CacheBehaviors']['Items'])
+                    nb_cache_behaviors += len(d['CacheBehaviors']['Items'])
                 self.limits[
                     'Cache behaviors per distribution'
                 ]._add_current_usage(

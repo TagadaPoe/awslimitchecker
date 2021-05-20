@@ -151,7 +151,7 @@ class Test_CloudfrontService(object):
             == expected_nb_distributions
         assert cls.limits[limit].get_current_usage()[1].resource_id \
             == "ID-DISTRIBUTION-001"
-        assert cls.limits[limit].get_current_usage()[1].get_value() == 4
+        assert cls.limits[limit].get_current_usage()[1].get_value() == 5
 
         limit = "Origins per distribution"
         assert len(cls.limits[limit].get_current_usage()) \
