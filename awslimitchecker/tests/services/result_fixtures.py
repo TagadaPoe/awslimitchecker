@@ -1776,6 +1776,55 @@ class CloudFront(object):
         }
     }
 
+    test_find_usage_cache_policies_config = {
+        'CachePolicyList': {
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'Quantity': 123,
+            'Items': [
+                {
+                    'Type': 'custom',
+                    'CachePolicy': {
+                        'Id': 'CP01',
+                        'LastModifiedTime': datetime(2015, 1, 1),
+                        'CachePolicyConfig': {
+                            'Comment': 'string',
+                            'Name': 'string',
+                            'DefaultTTL': 123,
+                            'MaxTTL': 123,
+                            'MinTTL': 123,
+                            'ParametersInCacheKeyAndForwardedToOrigin': {
+                                'EnableAcceptEncodingGzip': True,
+                                'EnableAcceptEncodingBrotli': True,
+                                'HeadersConfig': {
+                                    'HeaderBehavior': 'whitelist',
+                                    'Headers': {
+                                        'Quantity': 3,
+                                        'Items': ['a', 'b', 'c']
+                                    },
+                                },
+                                'CookiesConfig': {
+                                    'CookieBehavior': 'whitelist',
+                                    'Cookies': {
+                                        'Quantity': 2,
+                                        'Items': ['1', '2']
+                                    }
+                                },
+                                'QueryStringsConfig': {
+                                    'QueryStringBehavior': 'allExcept',
+                                    'QueryStrings': {
+                                        'Quantity': 1,
+                                        'Items': ['string']
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            ]
+        }
+    }
+
     test_find_usage_origin_request_policies = {
         'OriginRequestPolicyList': {
             'NextMarker': 'string',
@@ -1794,6 +1843,48 @@ class CloudFront(object):
                         'Id': 'ORP02', 'OriginRequestPolicyConfig': {}
                     }
                 }
+            ]
+        }
+    }
+
+    test_find_usage_origin_request_policies_config = {
+        'OriginRequestPolicyList': {
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'Quantity': 123,
+            'Items': [
+                {
+                    'Type': 'custom',
+                    'OriginRequestPolicy': {
+                        'Id': 'ORP01',
+                        'LastModifiedTime': datetime(2015, 1, 1),
+                        'OriginRequestPolicyConfig': {
+                            'Comment': 'string',
+                            'Name': 'string',
+                            'HeadersConfig': {
+                                'HeaderBehavior': 'whitelist',
+                                'Headers': {
+                                    'Quantity': 3,
+                                    'Items': ['a', 'b', 'c']
+                                },
+                            },
+                            'CookiesConfig': {
+                                'CookieBehavior': 'whitelist',
+                                'Cookies': {
+                                    'Quantity': 2,
+                                    'Items': ['1', '2']
+                                }
+                            },
+                            'QueryStringsConfig': {
+                                'QueryStringBehavior': 'allExcept',
+                                'QueryStrings': {
+                                    'Quantity': 1,
+                                    'Items': ['string']
+                                }
+                            }
+                        }
+                    }
+                },
             ]
         }
     }

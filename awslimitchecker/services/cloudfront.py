@@ -326,6 +326,47 @@ class _CloudfrontService(_AwsService):
             aws_type='AWS::CloudFront::CachePolicy',
         )
 
+        if 'Items' in res['CachePolicyList']:
+            for cp in res['CachePolicyList']['Items']:
+                # Count whitelisted cookies
+                nb_cookies = 0
+                try:
+                    nb_cookies = len(cp['CachePolicy']['CachePolicyConfig'][
+                        'ParametersInCacheKeyAndForwardedToOrigin'][
+                        'CookiesConfig']['Cookies']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Cookies per cache policy'
+                ]._add_current_usage(nb_cookies,
+                                     resource_id=cp['CachePolicy']['Id'])
+
+                # Count whitelisted headers
+                nb_headers = 0
+                try:
+                    nb_headers = len(cp['CachePolicy']['CachePolicyConfig'][
+                        'ParametersInCacheKeyAndForwardedToOrigin'][
+                        'HeadersConfig']['Headers']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Headers per cache policy'
+                ]._add_current_usage(nb_headers,
+                                     resource_id=cp['CachePolicy']['Id'])
+
+                # Count whitelisted query strings
+                nb_querystring = 0
+                try:
+                    nb_querystring = len(cp['CachePolicy']['CachePolicyConfig'][
+                        'ParametersInCacheKeyAndForwardedToOrigin'][
+                        'QueryStringsConfig']['QueryStrings']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Query strings per cache policy'
+                ]._add_current_usage(nb_querystring,
+                                     resource_id=cp['CachePolicy']['Id'])
+
     def _find_usage_origin_request_policies(self):
         """find usage for CloudFront origin request policies"""
 
@@ -351,6 +392,50 @@ class _CloudfrontService(_AwsService):
             nb_resources,
             aws_type='AWS::CloudFront::OriginRequestPolicy',
         )
+
+        if 'Items' in res['OriginRequestPolicyList']:
+            for cp in res['OriginRequestPolicyList']['Items']:
+                # Count cookies
+                nb_cookies = 0
+                try:
+                    nb_cookies = len(
+                        cp['OriginRequestPolicy']['OriginRequestPolicyConfig'][
+                            'CookiesConfig']['Cookies']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Cookies per origin request policy'
+                ]._add_current_usage(
+                    nb_cookies,
+                    resource_id=cp['OriginRequestPolicy']['Id'])
+
+                # Count headers
+                nb_headers = 0
+                try:
+                    nb_headers = len(
+                        cp['OriginRequestPolicy']['OriginRequestPolicyConfig'][
+                            'HeadersConfig']['Headers']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Headers per origin request policy'
+                ]._add_current_usage(
+                    nb_headers,
+                    resource_id=cp['OriginRequestPolicy']['Id'])
+
+                # Count query strings
+                nb_querystring = 0
+                try:
+                    nb_querystring = len(
+                        cp['OriginRequestPolicy']['OriginRequestPolicyConfig'][
+                            'QueryStringsConfig']['QueryStrings']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Query strings per origin request policy'
+                ]._add_current_usage(
+                    nb_querystring,
+                    resource_id=cp['OriginRequestPolicy']['Id'])
 
     def get_limits(self):
         """
@@ -499,6 +584,60 @@ class _CloudfrontService(_AwsService):
             self.warning_threshold,
             self.critical_threshold,
             quotas_name="Whitelisted query strings per cache behavior"
+        )
+
+        limits["Cookies per cache policy"] = AwsLimit(
+            "Cookies per cache policy",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Cookies per cache policy"
+        )
+
+        limits["Headers per cache policy"] = AwsLimit(
+            "Headers per cache policy",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Headers per cache policy"
+        )
+
+        limits["Query strings per cache policy"] = AwsLimit(
+            "Query strings per cache policy",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Query strings per cache policy"
+        )
+
+        limits["Cookies per origin request policy"] = AwsLimit(
+            "Cookies per origin request policy",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Cookies per origin request policy"
+        )
+
+        limits["Headers per origin request policy"] = AwsLimit(
+            "Headers per origin request policy",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Headers per origin request policy"
+        )
+
+        limits["Query strings per origin request policy"] = AwsLimit(
+            "Query strings per origin request policy",
+            self,
+            10,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Query strings per origin request policy"
         )
 
         self.limits = limits

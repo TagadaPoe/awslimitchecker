@@ -83,7 +83,13 @@ class Test_CloudfrontService(object):
                 "Origin request policies per AWS account",
                 "Whitelisted cookies per cache behavior",
                 "Whitelisted headers per cache behavior",
-                "Whitelisted query strings per cache behavior"
+                "Whitelisted query strings per cache behavior",
+                "Cookies per cache policy",
+                "Headers per cache policy",
+                "Query strings per cache policy",
+                "Cookies per origin request policy",
+                "Headers per origin request policy",
+                "Query strings per origin request policy"
             ]
         )
         for name, limit in res.items():
@@ -367,6 +373,47 @@ class Test_CloudfrontService(object):
             )
         ]
 
+    def test_find_usage_cache_policies_config(self):
+        """
+        Check that obtaining cache_policies usage is correct, by
+        mocking AWS response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = result_fixtures.CloudFront\
+                .test_find_usage_cache_policies_config
+            cls._find_usage_cache_policies()
+
+        # Check that usage values are correctly set
+        limit = "Cookies per cache policy"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 2
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "CP01"
+
+        limit = "Headers per cache policy"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 3
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "CP01"
+
+        limit = "Query strings per cache policy"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 1
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "CP01"
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_cache_policies,
+                Type='custom',
+                alc_marker_path=["CachePolicyList", "NextMarker"],
+                alc_data_path=["CachePolicyList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
     def test_find_usage_origin_request_policies(self):
         """
         Check that obtaining origin_request_policies usage is correct, by
@@ -385,6 +432,47 @@ class Test_CloudfrontService(object):
         assert len(cls.limits[limit].get_current_usage()) == 1
         assert cls.limits[limit].get_current_usage()[0].get_value() == 2
         assert cls.limits[limit].get_current_usage()[0].resource_id is None
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_origin_request_policies,
+                Type='custom',
+                alc_marker_path=["OriginRequestPolicyList", "NextMarker"],
+                alc_data_path=["OriginRequestPolicyList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_origin_request_policies_config(self):
+        """
+        Check that obtaining origin_request_policies usage is correct, by
+        mocking AWS response.
+        """
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = result_fixtures.CloudFront\
+                .test_find_usage_origin_request_policies_config
+            cls._find_usage_origin_request_policies()
+
+        # Check that usage values are correctly set
+        limit = "Cookies per origin request policy"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 2
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "ORP01"
+
+        limit = "Headers per origin request policy"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 3
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "ORP01"
+
+        limit = "Query strings per origin request policy"
+        assert len(cls.limits[limit].get_current_usage()) == 1
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 1
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "ORP01"
 
         # Check which methods were called
         assert mock_conn.mock_calls == []
