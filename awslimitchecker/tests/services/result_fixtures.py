@@ -1721,7 +1721,11 @@ class CloudFront(object):
                     'KeyGroup': {
                         'Id': 'kg01',
                         'LastModifiedTime': datetime(2015, 1, 1),
-                        'KeyGroupConfig': {}
+                        'KeyGroupConfig': {
+                            'Name': 'string',
+                            'Items': ['key01', 'key02', 'key03', 'key04'],
+                            'Comment': 'string'
+                        }
                     }
                 },
                 {

@@ -278,6 +278,17 @@ class _CloudfrontService(_AwsService):
             aws_type='AWS::CloudFront::KeyGroup',
         )
 
+        if 'Items' in res['KeyGroupList']:
+            for kg in res['KeyGroupList']['Items']:
+                nb_keys = 0
+                try:
+                    nb_keys = len(kg['KeyGroup']['KeyGroupConfig']['Items'])
+                except KeyError:
+                    pass
+                self.limits[
+                    'Public keys in a single key group'
+                ]._add_current_usage(nb_keys, resource_id=kg['KeyGroup']['Id'])
+
     def _find_usage_origin_access_identities(self):
         """find usage for CloudFront origin access identities"""
 
@@ -640,6 +651,14 @@ class _CloudfrontService(_AwsService):
             quotas_name="Query strings per origin request policy"
         )
 
+        limits["Public keys in a single key group"] = AwsLimit(
+            "Public keys in a single key group",
+            self,
+            5,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Public keys in a single key group"
+        )
         self.limits = limits
         return limits
 

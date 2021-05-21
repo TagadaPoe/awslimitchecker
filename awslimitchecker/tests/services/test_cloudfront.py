@@ -89,7 +89,8 @@ class Test_CloudfrontService(object):
                 "Query strings per cache policy",
                 "Cookies per origin request policy",
                 "Headers per origin request policy",
-                "Query strings per origin request policy"
+                "Query strings per origin request policy",
+                "Public keys in a single key group"
             ]
         )
         for name, limit in res.items():
@@ -269,6 +270,11 @@ class Test_CloudfrontService(object):
         assert len(cls.limits[limit].get_current_usage()) == 1
         assert cls.limits[limit].get_current_usage()[0].get_value() == 2
         assert cls.limits[limit].get_current_usage()[0].resource_id is None
+
+        limit = "Public keys in a single key group"
+        assert len(cls.limits[limit].get_current_usage()) == 2
+        assert cls.limits[limit].get_current_usage()[0].get_value() == 4
+        assert cls.limits[limit].get_current_usage()[0].resource_id == "kg01"
 
         # Check which methods were called
         assert mock_conn.mock_calls == []
