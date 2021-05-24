@@ -1954,6 +1954,176 @@ class CloudFront(object):
         }
     }
 
+    test_find_usage_distributions_per_key_group = {
+        'DistributionList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 2,
+            'Items': [
+                {
+                    'Id': 'ID-DISTRIBUTION-001',
+                    'DefaultCacheBehavior': {
+                        'TrustedKeyGroups': {
+                            'Enabled': False,
+                            'Quantity': 123,
+                            'Items': ['A', 'B', 'C']
+                        },
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'PathPattern': 'string',
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 123,
+                                    'Items': ['A', 'B']
+                                },
+                            },
+                            {
+                                'PathPattern': 'string',
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 123,
+                                    'Items': ['A']
+                                },
+                            },
+                        ]
+                    }
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-002',
+                    'DefaultCacheBehavior': {
+                        'TrustedKeyGroups': {
+                            'Enabled': False,
+                            'Quantity': 123,
+                            'Items': ['A']
+                        },
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'PathPattern': 'string',
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 123,
+                                    'Items': []
+                                },
+                            },
+                            {
+                                'PathPattern': 'string',
+                                'TrustedKeyGroups': {
+                                    'Enabled': True,
+                                    'Quantity': 123,
+                                    'Items': []
+                                },
+                            },
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    test_find_usage_distributions_per_cache_policy = {
+        'DistributionList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 2,
+            'Items': [
+                {
+                    'Id': 'ID-DISTRIBUTION-001',
+                    'DefaultCacheBehavior': {
+                        'CachePolicyId': 'A',
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'PathPattern': 'path01',
+                                'CachePolicyId': 'A',
+                            },
+                            {
+                                'PathPattern': 'path02',
+                                'CachePolicyId': 'B',
+                            },
+                        ]
+                    }
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-002',
+                    'DefaultCacheBehavior': {
+                        'CachePolicyId': 'D',
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'PathPattern': 'path01',
+                                'CachePolicyId': 'A',
+                            },
+                            {
+                                'PathPattern': 'path02',
+                                'CachePolicyId': 'C',
+                            },
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    test_find_usage_distributions_per_origin_req_policy = {
+        'DistributionList': {
+            'Marker': 'string',
+            'NextMarker': 'string',
+            'MaxItems': 123,
+            'IsTruncated': False,
+            'Quantity': 2,
+            'Items': [
+                {
+                    'Id': 'ID-DISTRIBUTION-001',
+                    'DefaultCacheBehavior': {
+                        'OriginRequestPolicyId': 'A',
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'PathPattern': 'path01',
+                                'OriginRequestPolicyId': 'A',
+                            },
+                            {
+                                'PathPattern': 'path02',
+                                'OriginRequestPolicyId': 'B',
+                            },
+                        ]
+                    }
+                },
+                {
+                    'Id': 'ID-DISTRIBUTION-002',
+                    'DefaultCacheBehavior': {
+                        'OriginRequestPolicyId': 'A',
+                    },
+                    'CacheBehaviors': {
+                        'Quantity': 123,
+                        'Items': [
+                            {
+                                'PathPattern': 'path01',
+                                'OriginRequestPolicyId': 'C',
+                            },
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
 
 class ELB(object):
 

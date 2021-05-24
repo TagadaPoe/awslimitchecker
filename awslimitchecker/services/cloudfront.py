@@ -39,6 +39,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 import abc  # noqa
 import logging
+from collections import Counter
 
 from .base import _AwsService
 from ..limit import AwsLimit
@@ -88,6 +89,12 @@ class _CloudfrontService(_AwsService):
         else:
             distributions = res['DistributionList']['Items']
             nb_distributions = len(distributions)
+
+            # number of times a keygroup is referenced, in all distributions
+            keygroup_references = Counter()
+            cache_policy_references = Counter()
+            origin_request_policy_references = Counter()
+
             for d in distributions:
                 # Count alternate domain names
                 nb_aliases = 0
@@ -139,11 +146,14 @@ class _CloudfrontService(_AwsService):
                     aws_type='AWS::CloudFront::Distribution',
                 )
 
-                # Count keygroups in cache behaviors
-                # Count whitelisted cookies in cache behaviors
-                # Count whitelisted headers in cache behaviors
-                # Count whitelisted query strings in cache behaviors
+                # Count:
+                # - keygroups in cache behaviors
+                # - whitelisted cookies in cache behaviors
+                # - whitelisted headers in cache behaviors
+                # - whitelisted query strings in cache behaviors
                 keygroups = set()
+                cache_policies = set()
+                origin_request_policies = set()
 
                 # Iterate over additional cache behaviors
                 if ('CacheBehaviors' in d) and ('Items' in d['CacheBehaviors']):
@@ -195,6 +205,12 @@ class _CloudfrontService(_AwsService):
                             'Whitelisted query strings per cache behavior'
                         ]._add_current_usage(nb_querystring, resource_id=res_id)
 
+                        if 'CachePolicyId' in cb:
+                            cache_policies.add(cb['CachePolicyId'])
+                        if 'OriginRequestPolicyId' in cb:
+                            origin_request_policies.add(
+                                cb['OriginRequestPolicyId'])
+
                 # Default cache behavior
                 if 'DefaultCacheBehavior' in d:
                     cb = d['DefaultCacheBehavior']
@@ -244,6 +260,12 @@ class _CloudfrontService(_AwsService):
                         'Whitelisted query strings per cache behavior'
                     ]._add_current_usage(nb_querystring, resource_id=res_id)
 
+                    if 'CachePolicyId' in cb:
+                        cache_policies.add(cb['CachePolicyId'])
+                    if 'OriginRequestPolicyId' in cb:
+                        origin_request_policies.add(
+                            cb['OriginRequestPolicyId'])
+
                 self.limits[
                     'Key groups associated with a single distribution'
                 ]._add_current_usage(
@@ -251,6 +273,26 @@ class _CloudfrontService(_AwsService):
                     resource_id=d['Id'],
                     aws_type='AWS::CloudFront::Distribution',
                 )
+
+                keygroup_references.update(keygroups)
+                cache_policy_references.update(cache_policies)
+                origin_request_policy_references.update(origin_request_policies)
+
+            for k, count in keygroup_references.items():
+                self.limits[
+                    'Distributions associated with a single key group'
+                ]._add_current_usage(count, resource_id=k)
+
+            for k, count in cache_policy_references.items():
+                self.limits[
+                    'Distributions associated with the same cache policy'
+                ]._add_current_usage(count, resource_id=k)
+
+            for k, count in origin_request_policy_references.items():
+                self.limits[
+                    'Distributions associated with the same origin request '
+                    'policy'
+                ]._add_current_usage(count, resource_id=k)
 
         self.limits['Distributions per AWS account']._add_current_usage(
             nb_distributions,
@@ -659,6 +701,37 @@ class _CloudfrontService(_AwsService):
             self.critical_threshold,
             quotas_name="Public keys in a single key group"
         )
+
+        limits["Distributions associated with a single key group"] = AwsLimit(
+            "Distributions associated with a single key group",
+            self,
+            100,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Distributions associated with a single key group"
+        )
+
+        limits["Distributions associated with the same cache policy"] = \
+            AwsLimit(
+            "Distributions associated with the same cache policy",
+            self,
+            100,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Distributions associated with the same cache policy"
+        )
+
+        limits["Distributions associated with the same origin request policy"] \
+            = AwsLimit(
+            "Distributions associated with the same origin request policy",
+            self,
+            100,
+            self.warning_threshold,
+            self.critical_threshold,
+            quotas_name="Distributions associated with the same origin request "
+                "policy"
+        )
+
         self.limits = limits
         return limits
 

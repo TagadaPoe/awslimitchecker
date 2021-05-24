@@ -90,7 +90,10 @@ class Test_CloudfrontService(object):
                 "Cookies per origin request policy",
                 "Headers per origin request policy",
                 "Query strings per origin request policy",
-                "Public keys in a single key group"
+                "Public keys in a single key group",
+                "Distributions associated with a single key group",
+                "Distributions associated with the same cache policy",
+                "Distributions associated with the same origin request policy"
             ]
         )
         for name, limit in res.items():
@@ -209,10 +212,7 @@ class Test_CloudfrontService(object):
         """
         response = result_fixtures.CloudFront.\
             test_find_usage_distributions_keygroups
-
         mock_conn = Mock()
-
-        # with patch("%s.connect" % pb) as mock_connect:
         with patch("%s.paginate_dict" % pbm) as mock_paginate:
             cls = _CloudfrontService(21, 43, {}, None)
             cls.conn = mock_conn
@@ -242,7 +242,6 @@ class Test_CloudfrontService(object):
 
         # Check which methods were called
         assert mock_conn.mock_calls == []
-        # assert mock_connect.mock_calls == [call()]
         assert mock_paginate.mock_calls == [
             call(
                 mock_conn.list_distributions,
@@ -251,6 +250,97 @@ class Test_CloudfrontService(object):
                 alc_marker_param="Marker",
             )
         ]
+
+    def test_find_usage_distributions_per_keygroups(self):
+        """
+        Check that obtaining distributions usage is correct, by mocking AWS
+        response.
+        """
+        response = result_fixtures.CloudFront.\
+            test_find_usage_distributions_per_key_group
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = response
+            cls._find_usage_distributions()
+
+        limit = "Distributions associated with a single key group"
+        assert len(cls.limits[limit].get_current_usage()) == 3  # 3 key groups
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "A" in usage_map
+        assert usage_map["A"].get_value() == 2  # "A" referenced in 2 distrib
+        assert "B" in usage_map
+        assert usage_map["B"].get_value() == 1  # "B" referenced in 1 distrib
+        assert "C" in usage_map
+        assert usage_map["C"].get_value() == 1  # "C" referenced in 1 distrib
+
+        # Check which methods were called
+        assert mock_conn.mock_calls == []
+        assert mock_paginate.mock_calls == [
+            call(
+                mock_conn.list_distributions,
+                alc_marker_path=["DistributionList", "NextMarker"],
+                alc_data_path=["DistributionList", "Items"],
+                alc_marker_param="Marker",
+            )
+        ]
+
+    def test_find_usage_distributions_per_cache_policy(self):
+        """
+        Check that obtaining distributions usage is correct, by mocking AWS
+        response.
+        """
+        response = result_fixtures.CloudFront.\
+            test_find_usage_distributions_per_cache_policy
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = response
+            cls._find_usage_distributions()
+
+        limit = "Distributions associated with the same cache policy"
+        assert len(cls.limits[limit].get_current_usage()) == 4  # 4 cache pol.
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "A" in usage_map
+        assert usage_map["A"].get_value() == 2  # "A" referenced in 2 distrib
+        assert "B" in usage_map
+        assert usage_map["B"].get_value() == 1  # "B" referenced in 1 distrib
+        assert "C" in usage_map
+        assert usage_map["C"].get_value() == 1  # "C" referenced in 1 distrib
+        assert "D" in usage_map
+        assert usage_map["D"].get_value() == 1  # "D" referenced in 1 distrib
+
+    def test_find_usage_distributions_per_origin_req_policy(self):
+        """
+        Check that obtaining distributions usage is correct, by mocking AWS
+        response.
+        """
+        response = result_fixtures.CloudFront.\
+            test_find_usage_distributions_per_origin_req_policy
+        mock_conn = Mock()
+        with patch("%s.paginate_dict" % pbm) as mock_paginate:
+            cls = _CloudfrontService(21, 43, {}, None)
+            cls.conn = mock_conn
+            mock_paginate.return_value = response
+            cls._find_usage_distributions()
+
+        limit = "Distributions associated with the same origin request policy"
+        assert len(cls.limits[limit].get_current_usage()) == 3
+        # convert to map to ignore how usage entries are ordered in the array
+        usage_map = {u.resource_id: u
+                     for u in cls.limits[limit].get_current_usage()}
+        assert "A" in usage_map
+        assert usage_map["A"].get_value() == 2  # "A" referenced in 2 distrib
+        assert "B" in usage_map
+        assert usage_map["B"].get_value() == 1  # "B" referenced in 1 distrib
+        assert "C" in usage_map
+        assert usage_map["C"].get_value() == 1  # "C" referenced in 1 distrib
 
     def test_find_usage_keygroups(self):
         """
